@@ -1,0 +1,10 @@
+# requirements.txt
+
+# OpenCV via instalador externo
+# https://github.com/opencv/opencv/releases/download/3.4.11/opencv-3.4.11-vc14_vc15.exe
+
+numpy
+Pillow
+matplotlib
+tqdm
+requests
