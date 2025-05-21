@@ -1,3 +1,5 @@
+# app/core/detector.py
+
 import os
 import cv2
 from app.services.logger import get_logger
@@ -7,69 +9,82 @@ from app.config.settings import (
     RESULTS_DETECTED_PATH,
     RESULTS_NOT_DETECTED_PATH,
     DETECTION_PARAMS,
-    BASE_DIR
+    BASE_DIR,
 )
 
 logger = get_logger(__name__)
 
 
 def run_detection():
-    """
-    Aplica o classificador Haar treinado em imagens novas
-    e salva os resultados nas respectivas pastas.
-    """
+    """Aplica o classificador Haar treinado em imagens da pasta test_images."""
     if not os.path.exists(CASCADE_XML_PATH):
-        logger.error(f"Modelo Haar Cascade não encontrado em {CASCADE_XML_PATH}")
+        logger.error(f"Modelo Haar não encontrado: {CASCADE_XML_PATH}")
         return
 
     cascade = cv2.CascadeClassifier(CASCADE_XML_PATH)
     if cascade.empty():
-        logger.error("Erro ao carregar o cascade.xml.")
+        logger.error("Falha ao carregar cascade.xml.")
         return
 
     ensure_dir(RESULTS_DETECTED_PATH)
     ensure_dir(RESULTS_NOT_DETECTED_PATH)
 
-    # Usa a pasta dataset/test_images como entrada
-    test_images_path = os.path.join(BASE_DIR, "dataset", "test_images")
-    images = list_images(test_images_path)
+    test_dir = os.path.join(BASE_DIR, "dataset", "test_images")
+    images = list_images(test_dir)
 
     if not images:
-        logger.warning("Nenhuma imagem encontrada para detecção.")
+        logger.warning("Nenhuma imagem em dataset/test_images.")
         return
 
-    logger.info(f"Executando detecção em {len(images)} imagens...")
+    logger.info(f"Detectando em {len(images)} imagens…")
 
-    for image_path in images:
-        filename = os.path.basename(image_path)
-        image = cv2.imread(image_path)
-
-        if image is None:
-            logger.warning(f"Erro ao carregar imagem: {filename}")
+    for img_path in images:
+        filename = os.path.basename(img_path)
+        img = cv2.imread(img_path)
+        if img is None:
+            logger.warning(f"Falha ao abrir: {filename}")
             continue
 
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-        detections = cascade.detectMultiScale(
+        rects = cascade.detectMultiScale(
             gray,
             scaleFactor=DETECTION_PARAMS["scaleFactor"],
             minNeighbors=DETECTION_PARAMS["minNeighbors"],
             minSize=DETECTION_PARAMS["minSize"],
-            flags=DETECTION_PARAMS["flags"]
+            maxSize=DETECTION_PARAMS.get("maxSize"),
+            flags=DETECTION_PARAMS["flags"],
         )
 
-        if len(detections) > 0:
-            for (x, y, w, h) in detections:
-                cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            output_path = os.path.join(RESULTS_DETECTED_PATH, filename)
-            logger.info(f"Detectado: {filename} ({len(detections)} objetos)")
+        # ---------- Non-Maximum Suppression -----------------
+        rects = list(rects)                         # converte para lista nativa
+        if len(rects) > 0:
+            rects, _ = cv2.groupRectangles(
+                rects + rects,                     # duplica lista p/ agrupar
+                groupThreshold=DETECTION_PARAMS.get("groupThreshold", 1),
+                eps=DETECTION_PARAMS.get("eps", 0.3),
+            )
+            rects = rects.tolist()                 # volta a ser lista de tuplas
+        # ----------------------------------------------------
+
+        # Limite opcional de objetos por imagem
+        max_obj = DETECTION_PARAMS.get("max_objects")
+        if max_obj and len(rects) > max_obj:
+            rects = rects[:max_obj]
+
+        if len(rects) > 0:
+            for (x, y, w, h) in rects:
+                cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            out_path = os.path.join(RESULTS_DETECTED_PATH, filename)
+            logger.info(f"{filename}: {len(rects)} livro(s) detectado(s).")
         else:
-            output_path = os.path.join(RESULTS_NOT_DETECTED_PATH, filename)
-            logger.info(f"Nenhum objeto detectado: {filename}")
+            out_path = os.path.join(RESULTS_NOT_DETECTED_PATH, filename)
+            logger.info(f"{filename}: nenhum livro.")
 
-        cv2.imwrite(output_path, image)
+        cv2.imwrite(out_path, img)
 
-    logger.info("Processo de detecção concluído.")
+    logger.info("✅ Detecção concluída.")
+
 
 if __name__ == "__main__":
     run_detection()
