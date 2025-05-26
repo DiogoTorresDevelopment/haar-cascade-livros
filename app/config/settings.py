@@ -22,16 +22,16 @@ VEC_FILE_PATH = os.path.join(MODEL_DIR, "trained_vec.vec")
 
 # Parâmetros de treinamento do classificador Haar Cascade
 TRAINING_PARAMS = {
-    "num_negative": 350,      # ou mais, se tiver
-    "num_stages": 10,
-    "min_hit_rate": 0.95,
-    "max_false_alarm_rate": 0.5,
-    "feature_type": "HAAR",
+    "num_stages": 15,          # novo alvo
+    "num_negative": 300,      # 2× numPos recomendável
+    "min_hit_rate": 0.995,     # menor que 0.999 p/ não travar
+    "max_false_alarm_rate": 0.4,
+    "feature_type": "HAAR",     # LBP treina ~30 % mais rápido
     "width": 50,
     "height": 50,
-    "precalcValBufSize": 2048,
-    "precalcIdxBufSize": 2048,
-    "mode": "ALL",
+    "precalcValBufSize": 4096, # MB
+    "precalcIdxBufSize": 4096,
+    "mode": "ALL"
 }
 
 # Parâmetros para o processo de detecção
