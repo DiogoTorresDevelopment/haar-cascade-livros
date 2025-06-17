@@ -22,28 +22,30 @@ VEC_FILE_PATH = os.path.join(MODEL_DIR, "trained_vec.vec")
 
 # Parâmetros de treinamento do classificador Haar Cascade
 TRAINING_PARAMS = {
-    "num_stages": 15,          # novo alvo
-    "num_negative": 300,      # 2× numPos recomendável
-    "min_hit_rate": 0.995,     # menor que 0.999 p/ não travar
-    "max_false_alarm_rate": 0.4,
-    "feature_type": "HAAR",     # LBP treina ~30 % mais rápido
-    "width": 50,
-    "height": 50,
-    "precalcValBufSize": 4096, # MB
+    "num_stages": 15,              # pode manter
+    "num_negative": 400,           # se tiver base suficiente
+    "num_positive": 200,           # defina conforme a geração do .vec
+    "min_hit_rate": 5.990,         # um pouco menos exigente
+    "max_false_alarm_rate": 0.4,   # mantém estável
+    "feature_type": "HAAR",        # melhor para objetos com arestas
+    "width": 80,                   # aumenta riqueza de features
+    "height": 80,                  # idem
+    "precalcValBufSize": 4096,
     "precalcIdxBufSize": 4096,
     "mode": "ALL"
 }
 
+
 # Parâmetros para o processo de detecção
 DETECTION_PARAMS = {
-    "scaleFactor": 1.8,      # passo entre escalas
-    "minNeighbors": 10,       # exige mais retângulos vizinhos
-    "minSize": (160, 40),     # ≥ janela de treino
-    "maxSize": (1000, 400),   # opcional, pode omitir
+    "scaleFactor": 1.06,      # passo entre escalas
+    "minNeighbors": 3,       # exige mais retângulos vizinhos
+    "minSize": (80, 100),     # ≥ janela de treino
+    "maxSize": (800, 1200),   # opcional, pode omitir
     "flags": 0,
     "groupThreshold": 1,     # NMS: grupos com ≥2 retângulos
-    "eps": 0.3,              # NMS: sobreposição máxima
-    "max_objects": 5         # queremos máx. 5 livros
+    "eps": 0.2,              # NMS: sobreposição máxima
+    "max_objects": 2      # queremos máx. 5 livros
 }
 
 
